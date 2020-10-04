@@ -54,7 +54,7 @@ pipeline {
                },
                SkenAnalysis: {
                   sh "pip3 install --upgrade skencli --user"
-                  sh "skencli"
+                  sh "skencli --lang java"
                }
             )
          }
