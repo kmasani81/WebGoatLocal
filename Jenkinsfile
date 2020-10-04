@@ -6,7 +6,7 @@ pipeline {
    }
 
    stages {
-      stage('BUILD') {
+      stage('Build') {
          steps {
             git 'https://github.com/kmasani81/WebGoatLocal.git'
 
@@ -34,7 +34,9 @@ pipeline {
                                     usernameVariable: 'SONARUSER', \
                                     passwordVariable: 'SONARKEY') ]){
                       sh "mvn sonar:sonar -Dsonar.host.url=http://localhost:9000 -Dsonar.login=${SONARKEY}"
-                      echo "TODO: Parse analysis results .. "
+                      sh "python3 /opt/tools/custom/generate_sonar_csv.py --key ${SONARKEY} --outfile sonar_vuln.csv"
+                      sh "ls -trl $WORKSPACE"
+                      sh "cp $WORKSPACE/sonar_vuln.csv /Users/kiran/Downloads/files_to_process/"
                   }
                },
                GithubReport: {
@@ -42,17 +44,17 @@ pipeline {
                   withCredentials([ usernamePassword(credentialsId: 'Github', \
                                     usernameVariable: 'GITUSER', \
                                     passwordVariable: 'GITKEY') ]){
-                      sh "python3 /opt/tools/github_cli/report_org_vuln.py --key ${GITKEY}"
+                      sh "python3 /opt/tools/github_cli/report_org_vuln.py --key ${GITKEY} --type csv --output github_vuln_data.csv"
+                      sh "ls -trl $WORKSPACE"
+                      sh "cp $WORKSPACE/github_vuln_data.csv /Users/kiran/Downloads/files_to_process/"
                   }
                },
                SCAAnalysis: {
                   echo "TODO: Pending to be included."
-                  sh "sleep 10"
                },
-               ContainerScan: {
-                  echo "Running Container scan .. "
-                  // sh "cd $WORKSPACE && /opt/tools/anchore_cli/inline_scan-v0.6.0 -r -t 500  kmasani/webwolf:MYAPP-demo"
-                  // sh "/usr/bin/python /opt/devops/scripts/parse_anchore_analysis.py --outfile $WORKSPACE/anchore-reports/webgoat-local_latest-vuln.json"
+               SkenAnalysis: {
+                  sh "pip3 install --upgrade skencli --user"
+                  sh "skencli --lang java"
                }
             )
          }
@@ -68,12 +70,24 @@ pipeline {
          steps {
              echo "Running Container scan .. "
              sh "cd $WORKSPACE && /opt/tools/anchore_cli/inline_scan-v0.6.0 scan -r kmasani/webwolf:${DOCKER_RELEASE_TAG}"
+             sh "python3 /opt/tools/custom/generate_anchore_csv.py  --file $WORKSPACE/anchore-reports/webwolf_${DOCKER_RELEASE_TAG}-vuln.json  --outfile anchore-vuln-data.csv"
+             sh "ls -trl"
+             sh "cp $WORKSPACE/anchore-vuln-data.csv /Users/kiran/Downloads/files_to_process/"
          }
+      }
+
+      stage('RiskSense Upload') {
+          steps {
+              echo "Uploading scan-analysis results to RiskSense Platform"
+              sh "ls -trl /Users/kiran/Downloads/files_to_process/"
+              sh "python3 /opt/tools/upload_to_platform_v1.0/upload_to_platform.py"
+          }
       }
 
       stage('Checkpoint') {
           steps {
               echo "Analyze if all scan-results are within threshold"
+              sh "python3 /opt/tools/custom/checkpoint.py"
           }
       }
 
