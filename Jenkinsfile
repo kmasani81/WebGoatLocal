@@ -26,6 +26,10 @@ pipeline {
                },
                SCAAnalysis: {
                   echo "TODO: Pending to be included."
+               },
+               SkenAnalysis: {
+                  sh "pip3 install --upgrade skencli --user"
+                  sh "skencli"
                }
             )
          }
