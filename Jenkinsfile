@@ -49,7 +49,7 @@ pipeline {
                       sh "cp $WORKSPACE/github_vuln_data.csv /Users/kiran/Downloads/files_to_process/"
                   }
                },
-               SCAAnalysis: {
+               DependencyCheck: {
                   echo "OWASP Dependency scan .. "
                   sh "mvn test org.owasp:dependency-check-maven:check -Dformat=JSON"
                },
