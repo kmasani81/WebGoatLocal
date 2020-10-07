@@ -50,7 +50,8 @@ pipeline {
                   }
                },
                SCAAnalysis: {
-                  echo "TODO: Pending to be included."
+                  echo "OWASP Dependency scan .. "
+                  sh "mvn test org.owasp:dependency-check-maven:check -Dformat=XML"
                },
                SkenAnalysis: {
                   sh "pip3 install --upgrade skencli --user"
