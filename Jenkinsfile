@@ -51,7 +51,7 @@ pipeline {
                },
                SCAAnalysis: {
                   echo "OWASP Dependency scan .. "
-                  sh "mvn test org.owasp:dependency-check-maven:check -Dformat=XML"
+                  sh "mvn test org.owasp:dependency-check-maven:check -Dformat=JSON"
                },
                SkenAnalysis: {
                   sh "pip3 install --upgrade skencli --user"
